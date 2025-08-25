@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Portal</title>
+  <style>
+    /* ===== CSS RESET (lightweight) ===== */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color: #0f172a; background: #f8fafc; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; }
+
+    /* ===== THEME ===== */
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --brand: #2563eb;
+      --brand-600: #1d4ed8;
+      --brand-50: #eff6ff;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+      --radius: 14px;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 64px 1fr;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+      min-height: 100vh;
+    }
+
+    header {
+      grid-area: header;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: sticky; top: 0; z-index: 5;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; letter-spacing: .2px;
+    }
+    .brand-badge { width: 36px; height: 36px; border-radius: 9px; background: var(--brand-50); border: 1px solid var(--border); display: grid; place-items: center; font-weight: 800; color: var(--brand); }
+
+    .search {
+      flex: 1; max-width: 520px; margin: 0 16px; position: relative;
+    }
+    .search input {
+      width: 100%; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--border); background: #f1f5f9;
+    }
+
+    .user-area { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-weight: 700; }
+
+    aside {
+      grid-area: sidebar;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      position: sticky; top: 0; height: 100vh;
+      padding: 12px;
+    }
+    .nav-title { margin: 6px 10px 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+    .nav {
+      display: grid; gap: 6px; margin-bottom: 14px;
+    }
+    .nav button {
+      text-align: left; background: transparent; border: 1px solid transparent; padding: 10px 12px; border-radius: 10px;
+      display: flex; gap: 10px; align-items: center; color: #0f172a;
+    }
+    .nav button.active { background: var(--brand-50); border-color: var(--border); color: var(--brand-600); }
+    .nav button:hover { background: #f1f5f9; }
+
+    main {
+      grid-area: main;
+      padding: 16px; min-width: 0;
+    }
+
+    .cards {
+      display: grid; grid-template-columns: repeat(4, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;
+    }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .card h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); font-weight: 600; }
+    .stat { font-size: 26px; font-weight: 800; }
+
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .panel-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .panel-body { padding: 12px 14px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; }
+    .badge.ok { background: #ecfdf5; color: var(--ok); border-color: #bbf7d0; }
+    .badge.warn { background: #fffbeb; color: var(--warn); border-color: #fde68a; }
+    .badge.danger { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
+
+    .toolbar { display: flex; gap: 8px; align-items: center; }
+    .btn { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #ffffff; }
+    .btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .btn.primary:hover { background: var(--brand-600); }
+
+    .hidden { display: none !important; }
+
+    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+
+    /* ===== RESPONSIVE ===== */
+    .menu-toggle { display: none; }
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; grid-template-areas:
+        "header"
+        "main"; }
+      aside { position: fixed; left: 0; top: 64px; height: calc(100vh - 64px); width: 280px; transform: translateX(-100%); transition: transform .25s ease; z-index: 10; }
+      aside.open { transform: translateX(0); }
+      .menu-toggle { display: inline-flex; align-items: center; gap: 8px; }
+      .cards { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <button class="menu-toggle btn" aria-label="Toggle Menu" onclick="toggleMenu()">☰</button>
+        <div class="brand-badge" aria-hidden="true">SP</div>
+        <div>Student Portal</div>
+      </div>
+      <div class="search">
+        <label class="sr-only" for="q">Search</label>
+        <input id="q" type="search" placeholder="Search courses, people, resources…" oninput="handleSearch(this.value)" />
+      </div>
+      <div class="user-area">
+        <span class="badge" id="loginStatus">Guest</span>
+        <button class="btn primary" onclick="openLogin()">Login</button>
+        <div class="avatar" aria-hidden="true">👩🏻‍🎓</div>
+      </div>
+    </header>
+
+    <aside id="sidebar" aria-label="Sidebar Navigation">
+      <div class="nav-title">Menu</div>
+      <nav class="nav" id="nav">
+        <button data-section="dashboard" class="active">🏠 Dashboard</button>
+        <button data-section="courses">📚 Courses</button>
+        <button data-section="timetable">🗓️ Timetable</button>
+        <button data-section="assignments">📝 Assignments</button>
+        <button data-section="grades">🎯 Grades</button>
+        <button data-section="attendance">✅ Attendance</button>
+        <button data-section="announcements">📢 Announcements</button>
+        <button data-section="profile">👤 Profile</button>
+        <button data-section="settings">⚙️ Settings</button>
+      </nav>
+      <div class="nav-title">Quick Links</div>
+      <nav class="nav">
+        <a class="btn" href="#" onclick="alert('Opens Library (demo)')">🏛️ Library</a>
+        <a class="btn" href="#" onclick="alert('Opens Help Center (demo)')">🆘 Help Center</a>
+      </nav>
+    </aside>
+
+    <main>
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="section">
+        <div class="cards">
+          <div class="card">
+            <h3>GPA</h3>
+            <div class="stat">8.6</div>
+            <div class="badge ok">On track</div>
+          </div>
+          <div class="card">
+            <h3>Credits</h3>
+            <div class="stat">68/120</div>
+            <div class="badge warn">56% complete</div>
+          </div>
+          <div class="card">
+            <h3>Pending Assignments</h3>
+            <div class="stat">3</div>
+            <div class="badge danger">Due soon</div>
+          </div>
+          <div class="card">
+            <h3>Attendance</h3>
+            <div class="stat">92%</div>
+            <div class="badge ok">Good</div>
+          </div>
+        </div>
+
+        <div class="panel" role="region" aria-labelledby="dash-activity">
+          <div class="panel-header">
+            <h2 id="dash-activity" style="margin:0">Recent Activity</h2>
+            <div class="toolbar">
+              <button class="btn" onclick="refreshActivity()">Refresh</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <ul id="activity" style="margin:0; padding-left: 18px; line-height: 1.8">
+              <li>Assignment uploaded for Data Structures.</li>
+              <li>Grade released for DBMS Midterm (A-).</li>
+              <li>New announcement in Operating Systems.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- COURSES -->
+      <section id="courses" class="section hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 style="margin:0">My Courses</h2>
+            <div class="toolbar">
+              <button class="btn primary" onclick="alert('Enroll flow (demo)')">Enroll</button>
+              <button class="btn" onclick="alert('Filter (demo)')">Filter</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table aria-label="Courses table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Course</th>
+                  <th>Faculty</th>
+                  <th>Credits</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CS201</td>
+                  <td>Data Structures</td>
+                  <td>Dr. Rao</td>
+                  <td>4</td>
+                  <td><span class="badge ok">Active</span></td>
+                </tr>
+                <tr>
+                  <td>CS205</td>
+                  <td>Database Systems</td>
+                  <td>Prof. Iyer</td>
+                  <td>3</td>
+                  <td><span class="badge ok">Active</span></td>
+                </tr>
+                <tr>
+                  <td>CS240</td>
+                  <td>Operating Systems</td>
+                  <td>Ms. Jain</td>
+                  <td>4</td>
+                  <td><span class="badge warn">Waitlisted</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TIMETABLE -->
+      <section id="timetable" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Weekly Timetable</h2></div>
+          <div class="panel-body">
+            <table aria-label="Timetable">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>9:00</th>
+                  <th>11:00</th>
+                  <th>14:00</th>
+                  <th>16:00</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Mon</td><td>Data Structures</td><td>—</td><td>OS Lab</td><td>—</td>
+                </tr>
+                <tr>
+                  <td>Tue</td><td>DBMS</td><td>Tutorial</td><td>—</td><td>—</td>
+                </tr>
+                <tr>
+                  <td>Wed</td><td>—</td><td>Data Structures</td><td>—</td><td>DBMS Lab</td>
+                </tr>
+                <tr>
+                  <td>Thu</td><td>OS</td><td>—</td><td>Elective</td><td>—</td>
+                </tr>
+                <tr>
+                  <td>Fri</td><td>—</td><td>—</td><td>Seminar</td><td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ASSIGNMENTS -->
+      <section id="assignments" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Assignments</h2><div class="toolbar"><button class="btn primary" onclick="alert('New assignment upload (demo)')">Upload</button></div></div>
+          <div class="panel-body">
+            <table aria-label="Assignments">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Title</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CS201</td>
+                  <td>Linked Lists</td>
+                  <td>Aug 30</td>
+                  <td><span class="badge warn">Pending</span></td>
+                  <td><button class="btn" onclick="alert('Submit (demo)')">Submit</button></td>
+                </tr>
+                <tr>
+                  <td>CS205</td>
+                  <td>ER Diagram</td>
+                  <td>Aug 28</td>
+                  <td><span class="badge ok">Submitted</span></td>
+                  <td><button class="btn" onclick="alert('View (demo)')">View</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- GRADES -->
+      <section id="grades" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Grades</h2></div>
+          <div class="panel-body">
+            <table aria-label="Grades">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Midterm</th>
+                  <th>Practical</th>
+                  <th>Final</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Data Structures</td><td>83</td><td>18/20</td><td>—</td><td>A-</td></tr>
+                <tr><td>DBMS</td><td>78</td><td>19/20</td><td>—</td><td>B+</td></tr>
+                <tr><td>OS</td><td>—</td><td>—</td><td>—</td><td>NA</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ATTENDANCE -->
+      <section id="attendance" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Attendance</h2></div>
+          <div class="panel-body">
+            <table aria-label="Attendance">
+              <thead><tr><th>Course</th><th>Attended</th><th>Total</th><th>%</th></tr></thead>
+              <tbody>
+                <tr><td>Data Structures</td><td>23</td><td>25</td><td>92%</td></tr>
+                <tr><td>DBMS</td><td>21</td><td>24</td><td>87.5%</td></tr>
+                <tr><td>OS</td><td>10</td><td>12</td><td>83.3%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANNOUNCEMENTS -->
+      <section id="announcements" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Announcements</h2></div>
+          <div class="panel-body">
+            <ul style="margin:0; padding-left: 18px; line-height: 1.8">
+              <li>Campus will remain closed on Aug 29 for maintenance.</li>
+              <li>Hackathon registrations open until Sep 10.</li>
+              <li>Library adds 500+ new e-books.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section id="profile" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Profile</h2></div>
+          <div class="panel-body">
+            <form onsubmit="event.preventDefault(); alert('Profile saved (demo)')">
+              <div style="display:grid; gap:10px; grid-template-columns: repeat(2, 1fr)">
+                <label>Full Name<br><input type="text" value="Alex Student" required /></label>
+                <label>Email<br><input type="email" value="alex@student.edu" required /></label>
+                <label>Program<br><input type="text" value="B.Tech CSE" /></label>
+                <label>Year<br><input type="number" min="1" max="4" value="2" /></label>
+              </div>
+              <div style="margin-top:12px">
+                <button class="btn primary" type="submit">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settings" class="section hidden">
+        <div class="panel">
+          <div class="panel-header"><h2 style="margin:0">Settings</h2></div>
+          <div class="panel-body">
+            <label style="display:flex; align-items:center; gap:8px">
+              <input type="checkbox" onchange="toggleCompact(this.checked)" /> Compact tables
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; margin-top:10px">
+              <input type="checkbox" checked /> Email notifications
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <footer>© <span id="year"></span> Student Portal • Demo Template</footer>
+    </main>
+  </div>
+
+  <!-- ===== LOGIN MODAL (DEMO) ===== -->
+  <dialog id="loginModal" style="border:none; border-radius: 16px; width: 380px; max-width: calc(100% - 24px); box-shadow: var(--shadow); padding: 0">
+    <form method="dialog" class="panel" style="border:none">
+      <div class="panel-header"><strong>Login</strong><button class="btn" value="cancel">✖</button></div>
+      <div class="panel-body">
+        <label>Student ID<br><input id="sid" type="text" placeholder="e.g. 22CSE123" required style="width:100%" /></label>
+        <br>
+        <label>Password<br><input id="pwd" type="password" required style="width:100%" /></label>
+        <p style="color: var(--muted); font-size: 12px">Use any values (demo only).</p>
+        <div style="display:flex; justify-content:flex-end; gap:8px">
+          <button class="btn" value="cancel">Cancel</button>
+          <button class="btn primary" value="default" onclick="return doLogin()">Login</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    // ===== UTIL =====
+    const $ = (sel, parent=document) => parent.querySelector(sel);
+    const $$ = (sel, parent=document) => Array.from(parent.querySelectorAll(sel));
+
+    const sections = $$('.section');
+    const navButtons = $$('#nav button');
+
+    function showSection(id) {
+      sections.forEach(s => s.classList.toggle('hidden', s.id !== id));
+      navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.section === id));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (innerWidth <= 960) $('#sidebar').classList.remove('open');
+    }
+
+    navButtons.forEach(btn => btn.addEventListener('click', () => showSection(btn.dataset.section)));
+
+    function toggleMenu() {
+      $('#sidebar').classList.toggle('open');
+    }
+
+    function handleSearch(q) {
+      // Simple client-side filter example (demo): hide non-matching rows in Courses
+      const rows = $$('#courses tbody tr');
+      rows.forEach(tr => tr.style.display = tr.innerText.toLowerCase().includes(q.toLowerCase()) ? '' : 'none');
+    }
+
+    function openLogin() {
+      $('#loginModal').showModal();
+    }
+    function doLogin() {
+      const sid = $('#sid').value.trim();
+      const pwd = $('#pwd').value.trim();
+      if (!sid || !pwd) return false;
+      $('#loginModal').close();
+      $('#loginStatus').textContent = sid;
+      $('.btn.primary[onclick="openLogin()"]')?.remove();
+      alert('Logged in as ' + sid + ' (demo)');
+      return false; // prevent default form close (we manually closed)
+    }
+
+    function refreshActivity() {
+      const now = new Date().toLocaleString();
+      const item = document.createElement('li');
+      item.textContent = `Checked portal at ${now}.`;
+      $('#activity').prepend(item);
+    }
+
+    function toggleCompact(on) {
+      document.body.classList.toggle('compact', on);
+      const size = on ? '8px 6px' : '10px 8px';
+      $$('th, td').forEach(cell => cell.style.padding = size);
+    }
+
+    // Init
+    $('#year').textContent = new Date().getFullYear();
+    showSection('dashboard');
+  </script>
+</body>
+</html>
