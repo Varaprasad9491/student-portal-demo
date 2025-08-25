@@ -1,2 +1,3 @@
 # student-portal-demo
-Student Portal Application
+This is the Student Portal Application. This is used to fill the details of the student
+
